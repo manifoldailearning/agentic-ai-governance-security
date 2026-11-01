@@ -39,7 +39,7 @@ def chapters(text: str) -> str:
 
 
 def confirm_top_threat() -> int:
-    """Run the baseline inbox attack; count leaked records."""
+    """Run the baseline attack; count leaked card numbers."""
     env, tools = build_env()
     model = ScriptedModel([call("read_inbox")], gullible=True)
     asha = Principal("asha", tenant="acme")

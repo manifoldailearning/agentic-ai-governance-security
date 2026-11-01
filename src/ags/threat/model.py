@@ -91,7 +91,7 @@ class SystemModel:
         return [t for t in self.tools() if t.labels & wanted]
 
     def sinks(self) -> list[Element]:
-        """Tools that can move data outside the organisation."""
+        """Tools that can move data outside the organization."""
         return [t for t in self.tools() if t.effect == "external"]
 
 

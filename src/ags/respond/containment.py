@@ -81,6 +81,9 @@ class TokenRevocation:
         self, ctx: Context, spec: ToolSpec, call: ToolCall
     ) -> Decision:
         token = ctx.principal.attrs.get(self.claim)
+        if token is None:  # fail closed: nothing to check
+            why = f"no {self.claim} on the principal"
+            return Decision("deny", self.name, why)
         if token in self.revoked:
             why = f"token {token} revoked"
             return Decision("deny", self.name, why)

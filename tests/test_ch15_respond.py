@@ -169,3 +169,17 @@ def test_example_shows_agent_frozen(capsys):
     out = capsys.readouterr().out
     assert "1 denied by kill-switch" in out
     assert "tenants  acme, globex" in out
+
+
+def test_token_revocation_fails_closed_without_token_id():
+    from ags.core import Context, Principal, ToolCall, ToolSpec
+    from ags.respond.containment import TokenRevocation
+
+    guard = TokenRevocation()
+    spec = ToolSpec("read_doc", "read")
+    call_ = ToolCall("c1", "read_doc", {"doc_id": "pricing"})
+    anon = Context("run-1", "agent", Principal("asha"))
+    assert guard.check(anon, spec, call_).verdict == "deny"
+    held = Principal("asha", attrs={"jti": "tok-1"})
+    ctx = Context("run-1", "agent", held)
+    assert guard.check(ctx, spec, call_).allowed
