@@ -25,7 +25,7 @@ def test_attack_looks_like_success_to_the_user():
     _, result = ch01.triage(benign=False)
     assert result.status == "completed"
     assert result.denied == []
-    assert "EXFIL" not in result.output
+    assert EXFIL not in result.output
 
 
 def test_benign_inbox_sends_nothing():

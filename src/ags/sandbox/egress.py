@@ -56,6 +56,7 @@ class EgressGuard:
     allow: tuple[str, ...]
     url_args: tuple[str, ...] = ("url",)
     max_query: int = 64
+    max_path: int = 128
     max_entropy: float = 3.8  # for query values >= 20 chars
     name: str = "egress"
 
@@ -74,8 +75,10 @@ class EgressGuard:
         if port not in (None, 443):
             return f"port {port}"
         why = self.host_problem(parts.hostname or "")
-        return why or self.query_problem(
-            parts.query + parts.fragment
+        return (
+            why
+            or self.path_problem(parts.path)
+            or self.query_problem(parts.query + parts.fragment)
         )
 
     def host_problem(self, host: str) -> str | None:
@@ -84,6 +87,15 @@ class EgressGuard:
             return f"IP literal host {host}"
         if not host_allowed(host, self.allow):
             return f"{host} not allowlisted"
+        return None
+
+    def path_problem(self, path: str) -> str | None:
+        """The path is a channel too: cap it, screen segments."""
+        if len(path) > self.max_path:
+            return f"path of {len(path)} chars"
+        for seg in unquote(path).split("/"):
+            if len(seg) >= 20 and entropy(seg) > self.max_entropy:
+                return "high-entropy path segment"
         return None
 
     def query_problem(self, query: str) -> str | None:

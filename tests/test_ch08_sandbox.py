@@ -192,3 +192,17 @@ def test_example_main(capsys):
         "fetched: blog.example/tips, status.example/today" in out
     )
     assert "killed at 1.0s timeout (exit -9)" in out
+
+
+def test_path_is_screened_like_the_query():
+    import base64
+
+    from ags.sandbox import EgressGuard
+
+    guard = EgressGuard(("status.example",))
+    blob = base64.b64encode(bytes(range(200))).decode()
+    assert guard.problem(f"https://status.example/{blob}")
+    chunk = blob[:40].replace("/", "_").replace("+", "-")
+    why = guard.problem(f"https://status.example/{chunk}/x")
+    assert why == "high-entropy path segment"
+    assert guard.problem("https://status.example/today") is None
