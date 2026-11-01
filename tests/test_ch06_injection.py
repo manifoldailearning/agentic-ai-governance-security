@@ -138,3 +138,19 @@ def test_example_main(capsys):
     out = capsys.readouterr().out
     assert "emails to partner@exfil.example: 0" in out
     assert "held q-1 from read_inbox: tool_syntax" in out
+
+
+def test_quarantine_alone_stops_the_attack():
+    # marking off: the toy model could parse marked text, so this
+    # proves quarantine, not datamarking, removed the directive
+    env, tools = build_env()
+    tools = [
+        ScreenedTool(t, mark=False)
+        if t.spec.name == "read_inbox"
+        else t
+        for t in tools
+    ]
+    model = ScriptedModel([call("read_inbox")], gullible=True)
+    res = Runtime(tools).run(Principal("asha"), "Triage", model)
+    assert [c.name for c in res.calls] == ["read_inbox"]
+    assert not [m for m in env.sent if m["to"] == EXFIL]
