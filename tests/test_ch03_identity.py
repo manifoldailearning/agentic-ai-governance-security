@@ -160,3 +160,32 @@ def test_non_positive_lifetime_is_rejected():
                 "support",
                 ttl=bad,
             )
+
+
+def test_with_token_exposes_jti_for_revocation():
+    from ags.core import (
+        Context,
+        FakeClock,
+        Principal,
+        ToolCall,
+        ToolSpec,
+    )
+    from ags.identity import TokenService, with_token
+    from ags.respond.containment import TokenRevocation
+
+    svc = TokenService(b"k" * 32, FakeClock())
+    svc.register_agent("support-agent", ["tool:read_doc"])
+    tok = svc.issue(
+        "support-agent",
+        Principal("asha"),
+        ["tool:read_doc"],
+        "support",
+    )
+    who = with_token(Principal("asha"), tok)
+    guard = TokenRevocation()
+    ctx = Context("run-1", "support-agent", who)
+    spec, c = ToolSpec("read_doc", "read"), ToolCall("1", "x", {})
+    assert guard.check(ctx, spec, c).allowed
+    guard.revoked.add(who.attrs["jti"])
+    assert guard.check(ctx, spec, c).verdict == "deny"
+    assert "jti" not in with_token(Principal("b"), "junk").attrs
