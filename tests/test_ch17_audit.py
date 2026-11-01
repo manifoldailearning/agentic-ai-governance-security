@@ -70,9 +70,8 @@ def test_deleted_or_moved_entries_break_the_chain(edit, index):
 
 def test_anchors_catch_truncation_and_rewrite_with_key():
     log = chain(10, anchor_every=5)
-    assert not verify(
-        log.entries[:8], KEYS
-    ).bad_index  # no anchors
+    no_anchors = verify(log.entries[:8], KEYS)
+    assert no_anchors.ok and no_anchors.bad_index is None
     cut = verify(log.entries[:8], KEYS, log.anchors)
     assert cut.problem.startswith("truncated")
     forged = AuditLog(KEY, "k1")  # insider holding the key
