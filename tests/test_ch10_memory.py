@@ -22,12 +22,14 @@ CHEN = Principal("chen", tenant="globex", roles=SUPPORT)
 
 
 def test_acl_filters_before_ranking():
+    # the foreign entry is written first and matches better,
+    # so ranking before filtering would return it at k=1
     store = MemoryStore()
-    store.write(ASHA, "refund note", readers=SUPPORT)
     store.write(
-        CHEN, "refund refund refund note", readers=SUPPORT
+        CHEN, "refund card note charged twice", readers=SUPPORT
     )
-    hits = store.search(ASHA, "refund note", k=1)
+    store.write(ASHA, "refund note", readers=SUPPORT)
+    hits = store.search(ASHA, "refund card note charged", k=1)
     assert [e.tenant for e in hits] == ["acme"]
 
 
