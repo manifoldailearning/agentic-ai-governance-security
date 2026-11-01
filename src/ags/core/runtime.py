@@ -99,6 +99,7 @@ class Runtime:
         self, ctx: Context, spec: ToolSpec, call: ToolCall
     ) -> Decision:
         """First deny wins; ``approve`` needs a human yes."""
+        notes = []  # why each guard allowed, kept for audit
         for guard in self.guards:
             d = guard.check(ctx, spec, call)
             if d.verdict == "deny":
@@ -110,6 +111,11 @@ class Runtime:
                 if not self.approver(ctx, spec, call, d):
                     why = "approval refused: " + d.reason
                     return Decision("deny", d.guard, why)
+                notes.append(f"{d.guard}: approved")
+            elif d.reason:
+                notes.append(f"{d.guard}: {d.reason}")
+        if notes:
+            return Decision("allow", "-", "; ".join(notes))
         return ALLOW
 
     def _event(self, ctx: Context, kind: str, **kw: Any) -> None:
@@ -212,13 +218,13 @@ class Runtime:
         """Output guards; ``None`` means the answer is blocked."""
         for guard in self.output_guards:
             d = guard.check_output(ctx, text)
-            if d.verdict != "allow":
-                self._event(
+            if d.verdict != "allow" or d.text is not None:
+                self._event(  # blocks and rewrites are evidence
                     ctx,
                     "output",
                     verdict=d.verdict,
                     guard=d.guard,
-                    reason=d.reason,
+                    reason=d.reason or "rewritten",
                 )
             if d.verdict == "deny":
                 return None

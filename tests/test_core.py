@@ -148,3 +148,16 @@ def test_event_log_round_trip(tmp_path):
     back = load_events(p)
     assert len(back) == n and back[0].kind == "task"
     assert isinstance(EventLog().events, list)
+
+
+class Note:
+    name = "note"
+
+    def check(self, ctx, spec, call):
+        return Decision("allow", self.name, "checked")
+
+
+def test_allow_reasons_are_kept_for_audit():
+    env, rt, res = attack([Note()])
+    ev = rt.log.where(kind="tool_call", tool="read_inbox")[0]
+    assert ev.verdict == "allow" and ev.reason == "note: checked"
