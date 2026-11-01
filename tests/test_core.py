@@ -161,3 +161,16 @@ def test_allow_reasons_are_kept_for_audit():
     env, rt, res = attack([Note()])
     ev = rt.log.where(kind="tool_call", tool="read_inbox")[0]
     assert ev.verdict == "allow" and ev.reason == "note: checked"
+
+
+class Broken:
+    name = "broken"
+
+    def check(self, ctx, spec, call):
+        raise TypeError("bad comparison")
+
+
+def test_a_guard_that_raises_fails_closed():
+    env, rt, res = attack([Broken()])
+    assert env.sent == [] and res.calls == []
+    assert res.denied[0][1].reason == "guard error: TypeError"

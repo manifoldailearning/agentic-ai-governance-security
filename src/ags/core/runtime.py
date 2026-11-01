@@ -101,7 +101,12 @@ class Runtime:
         """First deny wins; ``approve`` needs a human yes."""
         notes = []  # why each guard allowed, kept for audit
         for guard in self.guards:
-            d = guard.check(ctx, spec, call)
+            try:
+                d = guard.check(ctx, spec, call)
+            except Exception as exc:
+                # a broken guard fails closed: deny, never skip
+                why = f"guard error: {type(exc).__name__}"
+                return Decision("deny", guard.name, why)
             if d.verdict == "deny":
                 return d
             if d.verdict == "approve":

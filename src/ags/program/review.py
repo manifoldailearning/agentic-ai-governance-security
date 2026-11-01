@@ -134,7 +134,7 @@ def policy_check() -> Check:
         "policy tests",
         not failed,
         f"{len(results) - len(failed)}/{len(results)} pass "
-        f"under {policy.name}@{policy.version}",
+        f"under {policy.tag}",
     )
 
 
