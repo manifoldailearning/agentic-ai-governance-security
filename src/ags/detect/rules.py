@@ -281,7 +281,7 @@ def default_rules(
 def detect(
     events: Sequence[Event], rules: Iterable[Rule]
 ) -> list[Alert]:
-    """Run every rule; one alert per (rule, run), worst first."""
+    """One alert per (rule, run); per run, worst first."""
     merged: dict[tuple[str, str], Alert] = {}
     for rule in rules:
         for alert in rule.scan(events):
