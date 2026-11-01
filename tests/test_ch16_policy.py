@@ -165,3 +165,36 @@ def test_example_shows_impact(capsys):
     out = capsys.readouterr().out
     assert "7/7 passed" in out
     assert "2 changed; 2 now need approval" in out
+
+
+@pytest.mark.parametrize(
+    "rule",
+    [
+        {"id": "r", "verdict": "deny", "tools": []},
+        {"id": "r", "verdict": "allow", "roles": []},
+        {
+            "id": "r",
+            "verdict": "allow",
+            "when": [["principal.tenant", "in", "acme-corp"]],
+        },
+        {
+            "id": "r",
+            "verdict": "allow",
+            "when": [["args.amount", "<=", "200"]],
+        },
+        {
+            "id": "r",
+            "verdict": "allow",
+            "when": [["args.amount", "<", float("nan")]],
+        },
+    ],
+)
+def test_validator_rejects_policy_traps(rule):
+    doc = {
+        "policy": "p",
+        "version": "1",
+        "default": "deny",
+        "rules": [rule],
+    }
+    with pytest.raises(PolicyError):
+        Policy.load(doc)

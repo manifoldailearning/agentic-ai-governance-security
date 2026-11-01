@@ -91,11 +91,31 @@ def _rule_errors(rule: Any, seen: set[str]) -> list[str]:
         for e in rule.get("effects", [])
         if e not in EFFECTS
     ]
+    errors += [  # [] would mean "nothing" for tools but
+        f"{rid}: empty {k}; omit it instead"  # "anyone" for roles
+        for k in ("tools", "effects", "roles")
+        if k in rule and not rule[k]
+    ]
     for cond in rule.get("when", []):
         ok = isinstance(cond, list) and len(cond) == 3
         if not (ok and _path_ok(cond[0]) and cond[1] in OPS):
             errors.append(f"{rid}: bad condition {cond!r}")
+        elif not _literal_ok(cond[1], cond[2]):
+            errors.append(f"{rid}: bad literal in {cond!r}")
     return errors
+
+
+def _literal_ok(op: str, value: Any) -> bool:
+    """Ordered ops need a finite number; in/not_in a list."""
+    if op in ORDERED:
+        return (
+            isinstance(value, int | float)
+            and not isinstance(value, bool)
+            and math.isfinite(value)
+        )
+    if op in ("in", "not_in"):
+        return isinstance(value, list)
+    return True
 
 
 def _path_ok(path: Any) -> bool:
