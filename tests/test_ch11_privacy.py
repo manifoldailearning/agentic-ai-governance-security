@@ -159,3 +159,25 @@ def test_example_main(capsys):
     out = capsys.readouterr().out
     assert "minimized: {'id': 'C-100', 'last4': '1111'" in out
     assert "events     3 found  pseudonymized" in out
+
+
+def test_erase_pseudonymizes_every_event_field():
+    import re
+
+    from ags.core import Event
+    from ags.privacy.subject import EventStore
+
+    ev = Event(
+        0.0,
+        "run-1",
+        "agent",
+        "asha",
+        "acme",
+        "tool_call",
+        reason="blocked email to asha@acme.example",
+    )
+    store = EventStore("events", [ev])
+    pattern = re.compile(re.escape("asha@acme.example"))
+    assert store.erase(pattern, "subject:x") == "pseudonymized"
+    assert store.find(pattern) == []
+    assert "subject:x" in ev.reason

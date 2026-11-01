@@ -14,7 +14,13 @@ import hashlib
 import hmac
 import re
 from collections.abc import Iterable
-from dataclasses import asdict, dataclass, field, is_dataclass
+from dataclasses import (
+    asdict,
+    dataclass,
+    field,
+    fields,
+    is_dataclass,
+)
 from typing import Any, Protocol
 
 from ags.core import Event
@@ -98,8 +104,9 @@ class EventStore:
 
     def erase(self, pattern: re.Pattern[str], token: str) -> str:
         for e in self.find(pattern):
-            e.detail = scrub(e.detail, pattern, token)
-            e.principal = pattern.sub(token, e.principal)
+            for f in fields(e):  # every field find() searched
+                value = getattr(e, f.name)
+                setattr(e, f.name, scrub(value, pattern, token))
         return "pseudonymized"
 
 
